@@ -1,0 +1,27 @@
+name: piketin_fe
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.10.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dio: ^5.4.0
+  dio_cookie_manager: ^3.0.0 # Wajib: untuk menangkap cookie dari backend
+  cookie_jar: ^4.0.0         # Wajib: penyimpanan cookie
+  path_provider: ^2.1.2      # Untuk path penyimpanan cookie di HP
+  json_annotation: ^4.8.1
+  provider: ^6.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.8
+  json_serializable: ^6.7.1
+
+flutter:
+  uses-material-design: true
