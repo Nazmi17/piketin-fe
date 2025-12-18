@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import '../core/constants/api_constants.dart';
 import '../core/network/dio_client.dart';
-import '../models/api_response.dart';
+// import '../models/api_response.dart'; // Tidak wajib jika parsing manual
 import '../models/student_permit_model.dart';
 
 class PermitService {
@@ -9,8 +9,7 @@ class PermitService {
 
   PermitService(this.dioClient);
 
-  // 1. GET ALL PERMITS (dengan Pagination & Filter)
-  // Endpoint: /student-permits
+  // 1. GET ALL PERMITS (Tetap sama)
   Future<List<StudentPermit>> getPermits({
     int page = 1,
     int limit = 10,
@@ -24,15 +23,11 @@ class PermitService {
           'page': page,
           'limit': limit,
           if (search != null && search.isNotEmpty) 'search': search,
-          // Backend Express membaca array query seperti status[]=PENDING&status[]=APPROVED
           if (status != null && status.isNotEmpty) 'status[]': status,
         },
       );
 
-      // Backend response: { success: true, message: "...", data: [...list...], meta: {...} }
-      // Kita ambil bagian 'data' yang berisi List
       final List<dynamic> rawList = response.data['data'];
-
       return rawList
           .map((json) => StudentPermit.fromJson(json as Map<String, dynamic>))
           .toList();
@@ -43,9 +38,9 @@ class PermitService {
     }
   }
 
-  // 2. CREATE PERMIT
-  // Endpoint: /student-permits
-  Future<StudentPermit> createPermit({
+  // 2. CREATE PERMIT (DIUBAH)
+  // Return type diganti jadi Future<bool> agar tidak perlu parsing Model yang kompleks
+  Future<bool> createPermit({
     required String studentNis,
     required String reason,
     required int hoursStart,
@@ -53,7 +48,8 @@ class PermitService {
     int? hoursEnd,
   }) async {
     try {
-      final response = await dioClient.dio.post(
+      // Kita tidak perlu menampung response ke variabel jika tidak diparsing
+      await dioClient.dio.post(
         ApiConstants.permits,
         data: {
           "student_nis": studentNis,
@@ -64,20 +60,14 @@ class PermitService {
         },
       );
 
-      // Mengembalikan data permit yang baru dibuat
-      final apiResponse = ApiResponse<StudentPermit>.fromJson(
-        response.data,
-        (json) => StudentPermit.fromJson(json as Map<String, dynamic>),
-      );
-
-      return apiResponse.data!;
+      // Jika tidak ada error (exception), anggap sukses
+      return true;
     } on DioException catch (e) {
       throw Exception(e.response?.data['message'] ?? "Gagal membuat izin");
     }
   }
 
-  // 3. GET PENDING MAPEL (Khusus Guru Mapel)
-  // Endpoint: /student-permits/mapel/pending
+  // ... (method getPendingMapel, getPendingPiket, processPermit tetap sama) ...
   Future<List<StudentPermit>> getPendingMapel() async {
     try {
       final response = await dioClient.dio.get(
@@ -90,8 +80,6 @@ class PermitService {
     }
   }
 
-  // 4. GET PENDING PIKET (Khusus Guru Piket)
-  // Endpoint: /student-permits/piket/ready-to-approve
   Future<List<StudentPermit>> getPendingPiket() async {
     try {
       final response = await dioClient.dio.get(
@@ -104,13 +92,10 @@ class PermitService {
     }
   }
 
-  // 5. PROCESS PERMIT (Approve/Reject)
-  // Endpoint: /student-permits/:id/process/:type
-  // Type: 'mapel' atau 'piket'
   Future<bool> processPermit({
     required int id,
-    required String actionType, // 'mapel' atau 'piket'
-    required String status, // e.g. 'APPROVED', 'REJECTED', 'PENDING_PIKET'
+    required String actionType,
+    required String status,
   }) async {
     try {
       final String endpoint = actionType == 'mapel'

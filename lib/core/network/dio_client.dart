@@ -13,11 +13,13 @@ class DioClient {
 
   // Fungsi inisialisasi (harus dipanggil di main.dart)
   Future<void> init() async {
-    // 1. Tentukan lokasi penyimpanan cookie di memory HP
-    final Directory appDocDir = await getApplicationDocumentsDirectory();
+    // [FIX 1] Gunakan getApplicationSupportDirectory alih-alih Documents.
+    // Di Windows, ini mengarah ke AppData/Roaming yang aman dari OneDrive.
+    // Di Android/iOS, ini mengarah ke folder internal aplikasi yang aman.
+    final Directory appDocDir = await getApplicationSupportDirectory();
     final String appDocPath = appDocDir.path;
 
-    // 2. Setup CookieJar agar cookie awet meski aplikasi ditutup
+    // 2. Setup CookieJar
     _cookieJar = PersistCookieJar(
       storage: FileStorage("$appDocPath/.cookies/"),
     );
@@ -36,11 +38,9 @@ class DioClient {
     );
 
     // 4. Pasang Interceptor Cookie
-    // Ini otomatis mengirim cookie ke backend jika sudah ada,
-    // dan menyimpan cookie baru jika ada set-cookie dari backend.
     _dio.interceptors.add(CookieManager(_cookieJar));
 
-    // 5. Tambahkan logger untuk mempermudah debugging saat development
+    // 5. Logger
     _dio.interceptors.add(
       LogInterceptor(
         requestBody: true,
@@ -52,6 +52,13 @@ class DioClient {
 
   // Helper untuk menghapus session (saat logout)
   Future<void> clearCookies() async {
-    await _cookieJar.deleteAll();
+    // [FIX 2] Bungkus dengan try-catch.
+    // Jika file terkunci (OS Error), aplikasi tidak akan crash,
+    // dan user tetap bisa logout secara logika di aplikasi.
+    try {
+      await _cookieJar.deleteAll();
+    } catch (e) {
+      print("⚠️ Gagal menghapus file cookie fisik (aman untuk diabaikan): $e");
+    }
   }
 }

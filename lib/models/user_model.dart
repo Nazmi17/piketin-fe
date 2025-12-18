@@ -8,6 +8,9 @@ class User {
   final String username;
   final String fullname;
   final String? nip;
+
+  // [FIX] Tambahkan defaultValue agar tidak crash jika backend mengirim null
+  @JsonKey(defaultValue: [])
   final List<String> roles;
 
   User({
