@@ -140,7 +140,7 @@ class _SubjectManagementScreenState extends State<SubjectManagementScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.orange),
+                            icon: const Icon(Icons.edit, color: Colors.blue),
                             onPressed: () async {
                               final bool? success = await Navigator.push(
                                 context,
