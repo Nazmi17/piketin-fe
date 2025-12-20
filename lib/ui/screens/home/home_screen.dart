@@ -7,6 +7,7 @@ import '../permit/permit_screen.dart';
 import '../permit/permit_approval_mapel_screen.dart';
 import '../permit/permit_approval_piket_screen.dart';
 import '../admin/subject_management_screen.dart';
+import '../piket/piket_schedule_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -211,7 +212,7 @@ class HomeScreen extends StatelessWidget {
                 if (isGuru)
                   _MenuCard(
                     icon: Icons.approval_rounded,
-                    label: "Approval Mapel",
+                    label: "Persetujuan Izin",
                     color: Colors.teal,
                     onTap: () {
                       Navigator.push(
@@ -228,7 +229,7 @@ class HomeScreen extends StatelessWidget {
                 if (isPiket)
                   _MenuCard(
                     icon: Icons.verified_user_rounded,
-                    label: "Validasi Piket",
+                    label: "Validasi Izin",
                     color: Colors.blueAccent,
                     onTap: () {
                       Navigator.push(
@@ -241,13 +242,18 @@ class HomeScreen extends StatelessWidget {
                   ),
 
                 // 5. MENU UMUM LAINNYA
+                if (isAdmin)
                 _MenuCard(
                   icon: Icons.calendar_month_rounded,
                   label: "Jadwal Piket",
                   color: Colors.green,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Segera Hadir")),
+                    // [UBAH BAGIAN INI]
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PiketScheduleScreen(),
+                      ),
                     );
                   },
                 ),
