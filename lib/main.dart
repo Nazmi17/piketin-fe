@@ -8,7 +8,8 @@ import 'services/permit_service.dart';
 import 'services/piket_schedule_service.dart';
 import 'services/teacher_assignment_service.dart';
 import 'services/user_service.dart';
-import 'services/student_service.dart'; // Import Service
+import 'services/student_service.dart'; 
+import 'services/subject_service.dart';
 
 // Providers & Screens
 import 'providers/auth_provider.dart';
@@ -29,6 +30,7 @@ void main() async {
   final assignmentService = TeacherAssignmentService(dioClient);
   final userService = UserService(dioClient);
   final studentService = StudentService(dioClient);
+  final subjectService = SubjectService(dioClient);
 
   runApp(
     MultiProvider(
@@ -41,6 +43,7 @@ void main() async {
         Provider.value(value: assignmentService),
         Provider.value(value: userService),
         Provider.value(value: studentService),
+        Provider.value(value: subjectService),
       ],
       child: const MainApp(),
     ),
