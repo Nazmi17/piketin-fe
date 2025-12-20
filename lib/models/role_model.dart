@@ -8,3 +8,4 @@ class Role {
     return Role(id: json['id'], name: json['name']);
   }
 }
+  
