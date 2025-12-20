@@ -6,6 +6,7 @@ import '../permit/permit_screen.dart';
 // [BARU] Import screen approval
 import '../permit/permit_approval_mapel_screen.dart';
 import '../permit/permit_approval_piket_screen.dart';
+import '../admin/subject_management_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -185,6 +186,21 @@ class HomeScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const UserManagementScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  if (isAdmin)
+                  _MenuCard(
+                    icon: Icons.menu_book_rounded,
+                    label: "Mata Pelajaran",
+                    color: Colors.purple,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SubjectManagementScreen(),
                         ),
                       );
                     },
