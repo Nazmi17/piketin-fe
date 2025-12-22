@@ -60,6 +60,33 @@ class TeacherAssignmentService {
     }
   }
 
+  Future<bool> updateAssignment({
+    required int id,
+    required int teacherUserId,
+    required int classId,
+    required int subjectId,
+    required String details,
+    required String reason,
+    DateTime? dueDate,
+  }) async {
+    try {
+      await dioClient.dio.put(
+        '${ApiConstants.teacherAssignments}/$id',
+        data: {
+          "teacher_user_id": teacherUserId,
+          "class_id": classId,
+          "subject_id": subjectId,
+          "assignment_details": details,
+          "reason": reason,
+          if (dueDate != null) "due_date": dueDate.toIso8601String(),
+        },
+      );
+      return true;
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? "Gagal memperbarui tugas");
+    }
+  }
+
   // UPDATE & DELETE similar pattern...
   Future<bool> deleteAssignment(int id) async {
     try {

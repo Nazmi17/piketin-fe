@@ -142,7 +142,7 @@ class _ManageRolesScreenState extends State<ManageRolesScreen> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<Role>(
-                          value: null, // Selalu reset setelah add
+                          initialValue: null, // Selalu reset setelah add
                           hint: const Text("Pilih Role"),
                           items: availableRoles.map((role) {
                             return DropdownMenuItem(

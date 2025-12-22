@@ -143,7 +143,7 @@ class _PiketScheduleFormScreenState extends State<PiketScheduleFormScreen> {
                   children: [
                     // 1. PILIH HARI
                     DropdownButtonFormField<int>(
-                      value: _selectedDay,
+                      initialValue: _selectedDay,
                       decoration: const InputDecoration(
                         labelText: "Hari",
                         prefixIcon: Icon(Icons.calendar_today),

@@ -153,10 +153,9 @@ class _PermitApprovalMapelScreenState extends State<PermitApprovalMapelScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        "Waktu: Jam ke-${permit.hoursStart}" +
-                            (permit.hoursEnd != null
+                        "Waktu: Jam ke-${permit.hoursStart}${permit.hoursEnd != null
                                 ? " s/d ${permit.hoursEnd}"
-                                : ""),
+                                : ""}",
                         style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                       const Divider(height: 24),

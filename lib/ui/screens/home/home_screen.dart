@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:piketin_fe/ui/screens/guru/guru_tugas_screen.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../admin/user_management_screen.dart';
@@ -219,6 +220,21 @@ class HomeScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const PermitApprovalMapelScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                if (isGuru)
+                  _MenuCard(
+                    icon: Icons.task,
+                    label: "Tugas Guru",
+                    color: Colors.blue,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const GuruTugasScreen(),
                         ),
                       );
                     },
