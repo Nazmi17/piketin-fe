@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:piketin_fe/services/user_service.dart';
 import 'package:provider/provider.dart';
 import '../../../models/teacher_assignment_model.dart';
-import '../../../models/student_model.dart';
 import '../../../models/user_model.dart';
 import '../../../models/subject_model.dart';
+import '../../../models/class_model.dart'; // Import ClassModel
 import '../../../services/teacher_assignment_service.dart';
-import '../../../services/student_service.dart';
+import '../../../services/user_service.dart';
 import '../../../services/subject_service.dart';
+import '../../../services/class_service.dart'; // Import ClassService
 import '../../../ui/widgets/searchable_selection_field.dart';
 
 class GuruTugasFormScreen extends StatefulWidget {
@@ -24,16 +24,15 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
 
   // Data Source untuk Dropdown
   List<User> _teachers = [];
-  List<Student> _students = [];
   List<Subject> _subjects = [];
-  Map<int, String> _classes = {}; // Map of classId to className
+  List<ClassModel> _classes = []; // Menggunakan List<ClassModel>
 
-  bool _isLoadingInitial = true; // Loading saat ambil data awal
-  bool _isSubmitting = false; // Loading saat tombol simpan ditekan
+  bool _isLoadingInitial = true;
+  bool _isSubmitting = false;
 
   // Form Controllers & Values
   User? _selectedTeacher;
-  int? _selectedClassId;
+  ClassModel? _selectedClass; // Simpan objek ClassModel, bukan int ID saja
   Subject? _selectedSubject;
   final _detailsController = TextEditingController();
   final _reasonController = TextEditingController();
@@ -44,7 +43,6 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
     super.initState();
     _loadMasterData();
 
-    // Set initial values if editing
     if (widget.assignment != null) {
       _detailsController.text = widget.assignment!.assignmentDetails;
       _reasonController.text = widget.assignment!.reason;
@@ -52,81 +50,57 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
     }
   }
 
-  // Load all necessary data
   Future<void> _loadMasterData() async {
     try {
-      // First load teachers and students in parallel
-      final teachersFuture = context.read<UserService>().getMapelUsers();
-      final studentsFuture = context.read<StudentService>().getStudents();
-
-      // Try to load subjects, but handle potential 403 error
-      Future<List<Subject>> subjectsFuture;
-      try {
-        subjectsFuture = context.read<SubjectService>().getSubjects();
-      } catch (e) {
-        // If we can't load subjects, show a warning but continue
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Tidak dapat memuat daftar mata pelajaran. Anda mungkin tidak memiliki izin.',
-              ),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
-        subjectsFuture = Future.value(<Subject>[]);
-      }
-
+      // Load Teachers, Subjects, dan Classes secara paralel
+      // Kita TIDAK LAGI butuh StudentService di sini
       final results = await Future.wait([
-        teachersFuture,
-        subjectsFuture,
-        studentsFuture,
+        context.read<UserService>().getMapelUsers(),
+        context.read<SubjectService>().getSubjects(
+          limit: 100,
+        ), // Ambil banyak subject
+        context.read<ClassService>().getClasses(), // <--- Ambil Kelas langsung
       ]);
 
       if (mounted) {
-        final students = results[2] as List<Student>;
-        final classMap = <int, String>{};
-
-        // Extract unique classes from students
-        for (var student in students) {
-          if (student.classId != null &&
-              !classMap.containsKey(student.classId)) {
-            classMap[student.classId!] =
-                student.className ?? 'Kelas ${student.classId}';
-          }
-        }
-
         setState(() {
           _teachers = results[0] as List<User>;
           _subjects = results[1] as List<Subject>;
-          _students = students;
-          _classes = classMap;
+          _classes =
+              results[2] as List<ClassModel>; // Parsing ke List<ClassModel>
           _isLoadingInitial = false;
         });
 
         // Set initial selection for edit mode
         if (widget.assignment != null) {
+          // Cari Teacher
           _selectedTeacher = _teachers.firstWhere(
             (t) => t.id == widget.assignment!.teacher.id,
             orElse: () => _teachers.first,
           );
 
-          _selectedClassId = widget.assignment!.classInfo.id;
+          // Cari Class berdasarkan ID
+          if (_classes.isNotEmpty) {
+            try {
+              _selectedClass = _classes.firstWhere(
+                (c) => c.id == widget.assignment!.classInfo.id,
+              );
+            } catch (_) {
+              // Jika kelas lama sudah dihapus/tidak ditemukan
+            }
+          }
 
+          // Cari Subject
           if (_subjects.isNotEmpty) {
-            _selectedSubject = _subjects.firstWhere(
-              (s) => s.id == widget.assignment!.subject.id,
-              orElse: () => _subjects.first,
-            );
+            try {
+              _selectedSubject = _subjects.firstWhere(
+                (s) => s.id == widget.assignment!.subject.id,
+              );
+            } catch (_) {}
           }
         } else {
-          // Set default selections for new assignment
-          _selectedTeacher = _teachers.isNotEmpty ? _teachers.first : null;
-          _selectedClassId = _classes.keys.isNotEmpty
-              ? _classes.keys.first
-              : null;
-          _selectedSubject = _subjects.isNotEmpty ? _subjects.first : null;
+          // Default values for new assignment (optional)
+          // _selectedTeacher = _teachers.isNotEmpty ? _teachers.first : null;
         }
       }
     } catch (e) {
@@ -134,7 +108,7 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
         setState(() => _isLoadingInitial = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal memuat data: ${e.toString()}'),
+            content: Text('Gagal memuat data referensi: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -142,6 +116,7 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
     }
   }
 
+  // ... _selectDate sama seperti sebelumnya ...
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -159,8 +134,13 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate() ||
         _selectedTeacher == null ||
-        _selectedClassId == null ||
+        _selectedClass == null || // Cek object class
         _selectedSubject == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mohon lengkapi semua data (Guru, Kelas, Mapel)'),
+        ),
+      );
       return;
     }
 
@@ -172,7 +152,7 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
         // Create new assignment
         await service.createAssignment(
           teacherUserId: _selectedTeacher!.id,
-          classId: _selectedClassId!,
+          classId: _selectedClass!.id, // Ambil ID dari object ClassModel
           subjectId: _selectedSubject!.id,
           details: _detailsController.text,
           reason: _reasonController.text,
@@ -183,7 +163,7 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
         await service.updateAssignment(
           id: widget.assignment!.id,
           teacherUserId: _selectedTeacher!.id,
-          classId: _selectedClassId!,
+          classId: _selectedClass!.id,
           subjectId: _selectedSubject!.id,
           details: _detailsController.text,
           reason: _reasonController.text,
@@ -192,7 +172,7 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
       }
 
       if (mounted) {
-        Navigator.pop(context, true); // Return true to indicate success
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
@@ -238,26 +218,18 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
                 items: _teachers,
                 value: _selectedTeacher,
                 itemLabel: (user) => user.fullname,
-                onChanged: (val) {
-                  setState(() {
-                    _selectedTeacher = val;
-                  });
-                },
+                onChanged: (val) => setState(() => _selectedTeacher = val),
               ),
               const SizedBox(height: 16),
 
-              // Kelas Dropdown
-              SearchableSelectionField<int>(
+              // Kelas Dropdown (UPDATED)
+              SearchableSelectionField<ClassModel>(
                 label: "Kelas",
                 icon: Icons.class_,
-                items: _classes.keys.toList(), // This gives you List<int>
-                value: _selectedClassId,
-                itemLabel: (classId) => _classes[classId] ?? 'Kelas $classId',
-                onChanged: (val) {
-                  setState(() {
-                    _selectedClassId = val;
-                  });
-                },
+                items: _classes, // List<ClassModel>
+                value: _selectedClass, // ClassModel?
+                itemLabel: (cls) => cls.name, // Menampilkan nama kelas
+                onChanged: (val) => setState(() => _selectedClass = val),
               ),
               const SizedBox(height: 16),
 
@@ -268,15 +240,11 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
                 items: _subjects,
                 value: _selectedSubject,
                 itemLabel: (subject) => subject.name,
-                onChanged: (val) {
-                  setState(() {
-                    _selectedSubject = val;
-                  });
-                },
+                onChanged: (val) => setState(() => _selectedSubject = val),
               ),
               const SizedBox(height: 16),
 
-              // Detail Tugas
+              // ... Detail Tugas, Alasan, Date, Button (Sama seperti sebelumnya) ...
               TextFormField(
                 controller: _detailsController,
                 decoration: const InputDecoration(
@@ -290,7 +258,6 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Alasan Tugas
               TextFormField(
                 controller: _reasonController,
                 decoration: const InputDecoration(
@@ -304,7 +271,7 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Tanggal Deadline
+              // Tanggal Deadline (Sama)
               ListTile(
                 title: const Text('Tanggal Deadline'),
                 subtitle: Text(
@@ -344,7 +311,9 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
     );
   }
 
+  // ... _confirmDelete sama seperti sebelumnya ...
   Future<void> _confirmDelete() async {
+    // ... Copy logic confirm delete dari file lama ...
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -367,8 +336,9 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
     if (confirmed == true) {
       setState(() => _isSubmitting = true);
       try {
-        // await context.read<TeacherAssignmentService>()
-        //     .deleteAssignment(widget.assignment!.id);
+        await context.read<TeacherAssignmentService>().deleteAssignment(
+          widget.assignment!.id,
+        );
         if (mounted) {
           Navigator.pop(context, true);
         }
