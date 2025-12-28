@@ -90,6 +90,9 @@ class ApiConstants {
   /// GET (List with filters) & POST (Create)
   static const String teacherAssignments = "/teacher-assignments";
 
+  /// GET (List)
+  static const String classes = "/classes";
+
   /// GET (Detail), PUT (Update), DELETE (Delete)
   static String teacherAssignmentDetail(int id) => "/teacher-assignments/$id";
 }
