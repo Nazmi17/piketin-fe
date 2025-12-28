@@ -10,6 +10,7 @@ import 'services/teacher_assignment_service.dart';
 import 'services/user_service.dart';
 import 'services/student_service.dart'; 
 import 'services/subject_service.dart';
+import 'services/class_service.dart';
 
 // Providers & Screens
 import 'providers/auth_provider.dart';
@@ -31,6 +32,7 @@ void main() async {
   final userService = UserService(dioClient);
   final studentService = StudentService(dioClient);
   final subjectService = SubjectService(dioClient);
+  final classService = ClassService(dioClient);
 
   runApp(
     MultiProvider(
@@ -44,6 +46,7 @@ void main() async {
         Provider.value(value: userService),
         Provider.value(value: studentService),
         Provider.value(value: subjectService),
+        Provider.value(value: classService),
       ],
       child: const MainApp(),
     ),
