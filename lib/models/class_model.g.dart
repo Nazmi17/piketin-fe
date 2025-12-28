@@ -7,7 +7,7 @@ part of 'class_model.dart';
 // **************************************************************************
 
 ClassModel _$ClassModelFromJson(Map<String, dynamic> json) =>
-    ClassModel(id: (json['id'] as num).toInt(), name: json['name'] as String);
+    ClassModel(id: (json['id'] as num).toInt(), name: json['class'] as String);
 
 Map<String, dynamic> _$ClassModelToJson(ClassModel instance) =>
-    <String, dynamic>{'id': instance.id, 'name': instance.name};
+    <String, dynamic>{'id': instance.id, 'class': instance.name};
