@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/teacher_assignment_model.dart';
-import '../../../models/user_model.dart';
 import '../../../models/subject_model.dart';
-import '../../../models/class_model.dart'; // Import ClassModel
+import '../../../models/class_model.dart';
 import '../../../services/teacher_assignment_service.dart';
-import '../../../services/user_service.dart';
 import '../../../services/subject_service.dart';
-import '../../../services/class_service.dart'; // Import ClassService
+import '../../../services/class_service.dart';
+import '../../../providers/auth_provider.dart'; // [PENTING] Import AuthProvider
 import '../../../ui/widgets/searchable_selection_field.dart';
 
 class GuruTugasFormScreen extends StatefulWidget {
@@ -22,18 +21,18 @@ class GuruTugasFormScreen extends StatefulWidget {
 class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Data Source untuk Dropdown
-  List<User> _teachers = [];
+  // Data Source
   List<Subject> _subjects = [];
-  List<ClassModel> _classes = []; // Menggunakan List<ClassModel>
+  List<ClassModel> _classes = [];
 
   bool _isLoadingInitial = true;
   bool _isSubmitting = false;
 
-  // Form Controllers & Values
-  User? _selectedTeacher;
-  ClassModel? _selectedClass; // Simpan objek ClassModel, bukan int ID saja
+  // Form Values
+  // [HAPUS] User? _selectedTeacher; -> Tidak butuh variabel ini lagi
+  ClassModel? _selectedClass;
   Subject? _selectedSubject;
+
   final _detailsController = TextEditingController();
   final _reasonController = TextEditingController();
   DateTime? _dueDate;
@@ -52,42 +51,28 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
 
   Future<void> _loadMasterData() async {
     try {
-      // Load Teachers, Subjects, dan Classes secara paralel
-      // Kita TIDAK LAGI butuh StudentService di sini
+      // [UBAH] Kita tidak perlu lagi load daftar guru (getMapelUsers)
       final results = await Future.wait([
-        context.read<UserService>().getMapelUsers(),
-        context.read<SubjectService>().getSubjects(
-          limit: 100,
-        ), // Ambil banyak subject
-        context.read<ClassService>().getClasses(), // <--- Ambil Kelas langsung
+        context.read<SubjectService>().getSubjects(limit: 100),
+        context.read<ClassService>().getClasses(),
       ]);
 
       if (mounted) {
         setState(() {
-          _teachers = results[0] as List<User>;
-          _subjects = results[1] as List<Subject>;
-          _classes =
-              results[2] as List<ClassModel>; // Parsing ke List<ClassModel>
+          _subjects = results[0] as List<Subject>;
+          _classes = results[1] as List<ClassModel>;
           _isLoadingInitial = false;
         });
 
         // Set initial selection for edit mode
         if (widget.assignment != null) {
-          // Cari Teacher
-          _selectedTeacher = _teachers.firstWhere(
-            (t) => t.id == widget.assignment!.teacher.id,
-            orElse: () => _teachers.first,
-          );
-
-          // Cari Class berdasarkan ID
+          // Cari Class
           if (_classes.isNotEmpty) {
             try {
               _selectedClass = _classes.firstWhere(
                 (c) => c.id == widget.assignment!.classInfo.id,
               );
-            } catch (_) {
-              // Jika kelas lama sudah dihapus/tidak ditemukan
-            }
+            } catch (_) {}
           }
 
           // Cari Subject
@@ -98,9 +83,6 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
               );
             } catch (_) {}
           }
-        } else {
-          // Default values for new assignment (optional)
-          // _selectedTeacher = _teachers.isNotEmpty ? _teachers.first : null;
         }
       }
     } catch (e) {
@@ -116,7 +98,6 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
     }
   }
 
-  // ... _selectDate sama seperti sebelumnya ...
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -133,12 +114,22 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate() ||
-        _selectedTeacher == null ||
-        _selectedClass == null || // Cek object class
+        _selectedClass == null ||
         _selectedSubject == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Mohon lengkapi semua data (Guru, Kelas, Mapel)'),
+          content: Text('Mohon lengkapi Kelas dan Mata Pelajaran'),
+        ),
+      );
+      return;
+    }
+
+    // [BARU] Ambil user yang sedang login dari AuthProvider
+    final currentUser = context.read<AuthProvider>().user;
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sesi anda telah berakhir, silakan login ulang'),
         ),
       );
       return;
@@ -151,8 +142,8 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
       if (widget.assignment == null) {
         // Create new assignment
         await service.createAssignment(
-          teacherUserId: _selectedTeacher!.id,
-          classId: _selectedClass!.id, // Ambil ID dari object ClassModel
+          teacherUserId: currentUser.id, // [FIX] Gunakan ID user login
+          classId: _selectedClass!.id,
           subjectId: _selectedSubject!.id,
           details: _detailsController.text,
           reason: _reasonController.text,
@@ -162,7 +153,7 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
         // Update existing assignment
         await service.updateAssignment(
           id: widget.assignment!.id,
-          teacherUserId: _selectedTeacher!.id,
+          teacherUserId: currentUser.id, // [FIX] Gunakan ID user login
           classId: _selectedClass!.id,
           subjectId: _selectedSubject!.id,
           details: _detailsController.text,
@@ -211,24 +202,15 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Guru Pengajar Dropdown
-              SearchableSelectionField<User>(
-                label: "Guru Pengajar",
-                icon: Icons.person,
-                items: _teachers,
-                value: _selectedTeacher,
-                itemLabel: (user) => user.fullname,
-                onChanged: (val) => setState(() => _selectedTeacher = val),
-              ),
-              const SizedBox(height: 16),
+              // [HAPUS] Dropdown Guru Pengajar dihapus dari sini
 
-              // Kelas Dropdown (UPDATED)
+              // Kelas Dropdown
               SearchableSelectionField<ClassModel>(
                 label: "Kelas",
                 icon: Icons.class_,
-                items: _classes, // List<ClassModel>
-                value: _selectedClass, // ClassModel?
-                itemLabel: (cls) => cls.name, // Menampilkan nama kelas
+                items: _classes,
+                value: _selectedClass,
+                itemLabel: (cls) => cls.name,
                 onChanged: (val) => setState(() => _selectedClass = val),
               ),
               const SizedBox(height: 16),
@@ -244,7 +226,6 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
               ),
               const SizedBox(height: 16),
 
-              // ... Detail Tugas, Alasan, Date, Button (Sama seperti sebelumnya) ...
               TextFormField(
                 controller: _detailsController,
                 decoration: const InputDecoration(
@@ -271,7 +252,6 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Tanggal Deadline (Sama)
               ListTile(
                 title: const Text('Tanggal Deadline'),
                 subtitle: Text(
@@ -284,7 +264,6 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Submit Button
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -311,9 +290,7 @@ class _GuruTugasFormScreenState extends State<GuruTugasFormScreen> {
     );
   }
 
-  // ... _confirmDelete sama seperti sebelumnya ...
   Future<void> _confirmDelete() async {
-    // ... Copy logic confirm delete dari file lama ...
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
