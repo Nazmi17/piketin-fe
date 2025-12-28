@@ -51,7 +51,8 @@ class TeacherAssignmentService {
           "subject_id": subjectId,
           "assignment_details": details,
           "reason": reason,
-          if (dueDate != null) "due_date": dueDate.toIso8601String(),
+          // [FIX] Gunakan .toUtc() agar format ISO valid (ada 'Z' di akhir)
+          if (dueDate != null) "due_date": dueDate.toUtc().toIso8601String(),
         },
       );
       return true;
@@ -60,6 +61,7 @@ class TeacherAssignmentService {
     }
   }
 
+  // UPDATE
   Future<bool> updateAssignment({
     required int id,
     required int teacherUserId,
@@ -71,14 +73,15 @@ class TeacherAssignmentService {
   }) async {
     try {
       await dioClient.dio.put(
-        '${ApiConstants.teacherAssignments}/$id',
+        '${ApiConstants.teacherAssignments}/$id', // Pastikan endpoint detail benar
         data: {
           "teacher_user_id": teacherUserId,
           "class_id": classId,
           "subject_id": subjectId,
           "assignment_details": details,
           "reason": reason,
-          if (dueDate != null) "due_date": dueDate.toIso8601String(),
+          // [FIX] Gunakan .toUtc() disini juga
+          if (dueDate != null) "due_date": dueDate.toUtc().toIso8601String(),
         },
       );
       return true;
@@ -87,7 +90,7 @@ class TeacherAssignmentService {
     }
   }
 
-  // UPDATE & DELETE similar pattern...
+  // DELETE
   Future<bool> deleteAssignment(int id) async {
     try {
       await dioClient.dio.delete(ApiConstants.teacherAssignmentDetail(id));
