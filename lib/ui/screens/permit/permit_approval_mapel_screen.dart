@@ -59,7 +59,17 @@ class _PermitApprovalMapelScreenState extends State<PermitApprovalMapelScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Persetujuan Guru Mapel")),
+      appBar: AppBar(
+        title: const Text("Persetujuan Guru Mapel"),
+        // [BARU] Menambahkan tombol Refresh di AppBar
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: "Refresh Data",
+            onPressed: _refresh,
+          ),
+        ],
+      ),
       body: FutureBuilder<List<StudentPermit>>(
         future: _pendingFuture,
         builder: (context, snapshot) {
@@ -108,7 +118,6 @@ class _PermitApprovalMapelScreenState extends State<PermitApprovalMapelScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // [FIX] Menggunakan Expanded agar teks tidak menabrak batas kanan
                           Expanded(
                             child: Text(
                               permit.student.name,
@@ -116,9 +125,8 @@ class _PermitApprovalMapelScreenState extends State<PermitApprovalMapelScreen> {
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
-                              overflow: TextOverflow
-                                  .ellipsis, // Potong jika kepanjangan
-                              maxLines: 1, // Batasi 1 baris
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
 
@@ -153,9 +161,7 @@ class _PermitApprovalMapelScreenState extends State<PermitApprovalMapelScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        "Waktu: Jam ke-${permit.hoursStart}${permit.hoursEnd != null
-                                ? " s/d ${permit.hoursEnd}"
-                                : ""}",
+                        "Waktu: Jam ke-${permit.hoursStart}${permit.hoursEnd != null ? " s/d ${permit.hoursEnd}" : ""}",
                         style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                       const Divider(height: 24),

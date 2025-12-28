@@ -13,7 +13,8 @@ class GuruTugasScreen extends StatefulWidget {
 
 class _GuruTugasScreenState extends State<GuruTugasScreen> {
   late Future<List<TeacherAssignment>> _tugasFuture;
-  final TextEditingController _searchController = TextEditingController();
+
+  // [HAPUS] _searchController tidak diperlukan lagi
 
   @override
   void initState() {
@@ -86,9 +87,9 @@ class _GuruTugasScreenState extends State<GuruTugasScreen> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Gagal menghapus: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Gagal menghapus: $e')));
         }
       }
     }
@@ -100,10 +101,7 @@ class _GuruTugasScreenState extends State<GuruTugasScreen> {
       appBar: AppBar(
         title: const Text("Daftar Tugas Guru"),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshTugas,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _refreshTugas),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => _navigateToForm(null),
@@ -113,23 +111,7 @@ class _GuruTugasScreenState extends State<GuruTugasScreen> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Cari tugas...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              ),
-              onChanged: (value) {
-                _refreshTugas();
-              },
-            ),
-          ),
+          // [HAPUS] Bagian Search Bar dihapus dari sini
           Expanded(
             child: FutureBuilder<List<TeacherAssignment>>(
               future: _tugasFuture,
@@ -147,7 +129,10 @@ class _GuruTugasScreenState extends State<GuruTugasScreen> {
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   itemCount: tugasList.length,
                   itemBuilder: (context, index) {
                     final tugas = tugasList[index];
@@ -167,7 +152,8 @@ class _GuruTugasScreenState extends State<GuruTugasScreen> {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         tugas.subject.name,
@@ -208,14 +194,14 @@ class _GuruTugasScreenState extends State<GuruTugasScreen> {
                                 ),
                               ],
                             ),
-                            
+
                             // Assignment details
                             const SizedBox(height: 12),
                             Text(
                               tugas.assignmentDetails,
                               style: const TextStyle(fontSize: 14),
                             ),
-                            
+
                             // Due date and actions
                             const SizedBox(height: 12),
                             Row(
